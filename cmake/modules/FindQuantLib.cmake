@@ -14,7 +14,7 @@ string ( REPLACE "FindQuantLib.cmake" "../.." prefix ${CMAKE_CURRENT_LIST_FILE} 
 # [for some reason this does not work: set(prefix "../..")]
 #message ( STATUS "prefix=${prefix}" )
 
-set ( QuantLib_NAMES QuantLib QuantLib-1.2 quantlib quantlib-1.2 )
+set ( QuantLib_NAMES QuantLib quantlib)
 
 if ( UNIX )
 
@@ -45,22 +45,17 @@ if ( UNIX )
     endforeach ()
 
 elseif ( WIN32 )
-
-    set ( programfiles "$ENV{ProgramFiles}" )
-    set ( programfilesx86 "$ENV{ProgramFiles(x86)}" )
-
-    set ( windowspaths )
-    foreach ( p ${QuantLib_NAMES} )
-        list ( APPEND windowspaths "${programfiles}/${p}" )
-        list ( APPEND windowspaths "${programfilesx86}/${p}" )
-    endforeach ()
-
-    set ( includepaths ${windowspaths} )
-    set ( libpaths ${windowspaths} )
-
-    foreach ( p ${windowspaths} )
-        list ( APPEND libpaths "${p}/QuantLib" )
-    endforeach ()
+    if (NOT "$ENV{QUANTLIB_ROOT}" STREQUAL "")
+        SET(includepaths $ENV{QUANTLIB_ROOT})
+        set(libpaths $ENV{QUANTLIB_ROOT}/lib)
+    else()
+        message(STATUS "ADD QUANTLIB_ROOT Required")
+    endif()
+    if(MSVC_TOOLSET_VERSION GREATER_EQUAL 80)
+      set(_vc_COMPILER "-vc${MSVC_TOOLSET_VERSION}")
+    endif()
+    set(_vc_COMPILER "-vc140")
+    list( APPEND QuantLib_NAMES "QuantLib${_vc_COMPILER}${_boost_MULTITHREADED}.lib")
 
 endif ()
 
@@ -73,7 +68,6 @@ endif ()
 #endforeach()
 
 find_path ( QuantLib_INCLUDE_DIR ql/quantlib.hpp PATHS ${includepaths} )
-
 find_library ( QuantLib_LIBRARY NAMES ${QuantLib_NAMES} PATHS ${libpaths} )
 set ( QuantLib_LIBRARY_DIR ${QuantLib_LIBRARY} CACHE FILEPATH "The QuantLib library" )
 
